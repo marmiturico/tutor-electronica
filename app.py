@@ -57,7 +57,7 @@ if st.button("Analizar"):
             with st.spinner("Analizando componentes y trazas..."):
                 try:
                     response = client.models.generate_content(
-                        model='gemini-3.8-flash',
+                        model='gemini-flash-latest',
                         contents=contents
                     )
                     st.write(response.text)
