@@ -2,62 +2,70 @@ import streamlit as st
 from google import genai
 from PIL import Image
 
-# Configuración de la página para que se vea bien en el móvil
-st.set_page_config(page_title="Asistente SMD Electrónica", page_icon="⚡", layout="centered")
+st.set_page_config(page_title="Asistente SMD Electrónica", layout="wide")
 
-st.title("⚡ Asistente de Reparación SMD")
-st.write("Sube una foto clara de la placa y consulta tus dudas de electrónica.")
+st.title("Asistente de Electrónica SMD")
+st.write("Sube una foto de tu placa y mantén una conversación fluida con el técnico de IA.")
 
-# Campo para introducir la API Key de forma segura
-api_key = st.text_input("Introduce tu Clave de API de Gemini", type="password")
+# 1. Configurar el cliente de Gemini
+import os
 
-if not api_key:
-    st.warning("Por favor, introduce tu clave de API para continuar.")
-else:
-    # Inicializar el cliente de Google GenAI
-    client = genai.Client(api_key=api_key)
+api_key = os.environ.get("GEMINI_API_KEY")
+client = genai.Client(api_key=api_key)
+# 2. Inicializar el historial de chat en la sesión si no existe
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-    # Subida de imagen de la placa SMD
-    uploaded_file = st.file_uploader("Haz o sube una foto de la placa/componente SMD", type=["jpg", "jpeg", "png"])
+# 3. Mostrar los mensajes anteriores del chat en pantalla
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+        if "image" in message and message["image"]:
+            st.image(message["image"], width=300)
 
+# 4. Zona para subir la foto y escribir la consulta abajo
+uploaded_file = st.file_uploader("Sube una placa o componente a analizar", type=["jpg", "jpeg", "png"])
+
+if uploaded_file is not None:
+    image = Image.open(uploaded_file)
+    st.image(image, caption="Imagen cargada", width=300)
+
+# 5. Cuadro de texto del chat (para escribir las órdenes una detrás de otra)
+if user_query := st.chat_input("¿Qué le pasa a la placa o dónde quieres medir?"):
+    
+    # Guardar y mostrar el mensaje del usuario
+    st.session_state.messages.append({"role": "user", "content": user_query, "image": uploaded_file})
+    with st.chat_message("user"):
+        st.markdown(user_query)
+        if uploaded_file:
+            st.image(image, width=300)
+
+    # Definir el rol experto en electrónica SMD
+    system_instruction = (
+        "Eres un técnico superior en electrónica experto en reparación SMD. "
+        "Al indicar dónde medir, NUNCA dibujes mapas, esquemas conceptuales ni diagramas ascii. "
+        "Guiarás al usuario usando EXCLUSIVAMENTE referencias visuales sobre la propia foto subida. "
+        "Estructura tus indicaciones paso a paso:\n"
+        "1. Identifica la zona o cuadrante de la imagen.\n"
+        "2. Indica el componente de referencia cercano.\n"
+        "3. Especifica exactamente dónde colocar la punta roja y la negra del multímetro.\n"
+        "4. Indica el valor esperado."
+    )
+
+    contents = []
     if uploaded_file is not None:
-        image = Image.open(uploaded_file)
-        # Mostramos la imagen adaptada al ancho de pantalla
-        st.image(image, caption="Placa o componente a analizar", use_container_width=True)
+        contents.append(image)
+    
+    prompt_completo = f"{system_instruction}\n\nPregunta del técnico: {user_query}"
+    contents.append(prompt_completo)
 
-    # Pregunta o síntoma del fallo
-    user_query = st.text_area("¿Qué le pasa a la placa o qué componente quieres identificar?")
-
-    if st.button("Consultar al Técnico IA", type="primary"):
-        if not user_query and not uploaded_file:
-            st.error("Por favor, añade al menos una foto o escribe una pregunta.")
-        else:
-            with st.spinner("Analizando componentes y trazas..."):
-                try:
-                    # Definimos el rol experto en electrónica SMD (System Prompt)
-                    system_instruction = (
-                        "Eres un técnico superior en electrónica experto en reparación de placas a nivel "
-                        "de componentes SMD. Ayudas a identificar códigos de marcado superficial, interpretar "
-                        "etapas de circuitos, calcular caídas de tensión y guiar paso a paso en el diagnóstico "
-                        "de forma segura y técnica."
-                    )
-
-                    # Preparamos los contenidos para la IA
-                    contents = []
-                    if uploaded_file is not None:
-                        contents.append(image)
-                    
-                    prompt_completo = f"{system_instruction}\n\nPregunta del técnico: {user_query}"
-                    contents.append(prompt_completo)
-
-                    # Llamada al modelo Gemini 2.5 Flash (rápido y multimodal)
-                    response = client.models.generate_content(
-                        model='gemini-2.5-flash',
-                        contents=contents
-                    )
-
-                    st.subheader("Respuesta del Asistente:")
-                    st.write(response.text)
-
-                except Exception as e:
+    # Generar respuesta con la IA
+    with st.chat_message("assistant"):
+        with st.spinner("Analizando componentes y trazas..."):
+            try:
+                response = client.models.generate_content(
+                    model='gemini-flash-latest',
+                    contents=contents
+                )
+                respuesta_texto = response.text
                     st.error(f"Ha ocurrido un error al conectar con la IA: {e}")
