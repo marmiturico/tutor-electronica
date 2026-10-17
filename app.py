@@ -68,4 +68,4 @@ if user_query := st.chat_input("¿Qué le pasa a la placa o dónde quieres medir
                     contents=contents
                 )
                 respuesta_texto = response.text
-                    st.error(f"Ha ocurrido un error al conectar con la IA: {e}")
+                st.error(f"Ha ocurrido un error al conectar con la IA: {e}")
