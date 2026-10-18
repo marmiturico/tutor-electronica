@@ -1,4 +1,4 @@
-import streamlit as st
+[20:00, 18/10/2026] Juan Carlos Hernandez Mar: import streamlit as st
 from google import genai
 from PIL import Image
 
@@ -18,16 +18,35 @@ if not api_key:
 # Inicializar cliente de Gemini
 client = genai.Client(api_key=api_key)
 
-# 1. MEJORA DE VOZ: Añadir componente nativo de audio/voz de Streamlit si está disponible
-st.info("💡 *Consejo de uso:* Puedes usar el micrófono integrado en el teclado de tu móvil para dictar tus respuestas y mediciones cómodamente.")
+# 1. MEJORA DE VOZ: Añadir componente nativo de audio/voz de Streamlit si …
+[20:15, 18/10/2026] Juan Carlos Hernandez Mar: import streamlit as st
+from google import genai
+from PIL import Image
+import streamlit.components.v1 as components
 
-# Inicializar el historial de chat en la sesión para el flujo paso a paso
+# Configuración de la página
+st.set_page_config(page_title="Ingeniera Electrónica SMD - Asistente de Reparación", page_icon="👩‍🔧")
+
+st.title("👩‍🔧 Ingeniera Electrónica SMD - Asistente de Reparación")
+st.write("Tu experta personal en microelectrónica con guiado paso a paso y voz.")
+
+# Obtener clave API desde los Secrets de Streamlit
+api_key = st.secrets.get("GEMINI_API_KEY")
+
+if not api_key:
+    st.error("No se ha encontrado la clave 'GEMINI_API_KEY' en los Secrets de Streamlit. Por favor confígurala en Advanced Settings.")
+    st.stop()
+
+# Inicializar cliente de Gemini
+client = genai.Client(api_key=api_key)
+
+# Inicializar el historial de chat en la sesión
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 2. PROMPT DE INGENIERA ELECTRÓNICA EXPERTA Y MÉTODO PASO A PASO
+# PROMPT DE INGENIERA ELECTRÓNICA EXPERTA Y MÉTODO PASO A PASO
 SYSTEM_INSTRUCTION = (
-    "Eres una Ingeniera Electrónica Senior especializada en diagnóstico y reparación a nivel de componente en placas SMD y todo tipo de electronica. "
+    "Eres una Ingeniera Electrónica Senior especializada en diagnóstico y reparación a nivel de componente en placas SMD. "
     "Tu enfoque es sumamente metódico, riguroso, analítico y práctico. "
     "REGLA DE ORO DE DIAGNÓSTICO PASO A PASO:\n"
     "- NUNCA des todas las soluciones de golpe ni un listado largo de posibles fallos de principio a fin.\n"
@@ -37,21 +56,41 @@ SYSTEM_INSTRUCTION = (
     "- Si el usuario sube una foto, analiza las serigrafías (ej. R12, C304, U2), identifica posibles cortos, componentes desoldados o pistas dañadas y plantea la primera prueba técnica."
 )
 
-# Mostrar el historial de mensajes en pantalla
-for message in st.session_state.messages:
+# Mostrar el historial de mensajes
+for i, message in enumerate(st.session_state.messages):
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+        
+        # Si el mensaje es de la IA, añadimos un botón de voz interactivo
+        if message["role"] == "assistant":
+            # Limpiar texto para la síntesis de voz
+            texto_voz = message["content"].replace('*', '').replace('#', '').replace('`', '').replace('\n', ' ')
+            # Componente HTML con botón para reproducir voz en el móvil
+            voice_html = f"""
+                <div style="margin-top: 5px;">
+                    <button onclick="
+                        var msg = new SpeechSynthesisUtterance('{texto_voz}');
+                        msg.lang = 'es-ES';
+                        msg.rate = 1.0;
+                        window.speechSynthesis.cancel();
+                        window.speechSynthesis.speak(msg);
+                    " style="background-color: #ff4b4b; color: white; border: none; padding: 6px 12px; border-radius: 5px; font-size: 14px; cursor: pointer;">
+                        🔊 Escuchar respuesta en voz alta
+                    </button>
+                </div>
+            """
+            components.html(voice_html, height=45)
 
-# Subida opcional de imagen en la barra lateral o en el panel principal
-uploaded_file = st.file_uploader("📸 Sube una foto de la placa o componente (opcional para iniciar o cambiar de zona)", type=["jpg", "jpeg", "png"])
+# Subida opcional de imagen
+uploaded_file = st.file_uploader("📸 Sube una foto de la placa o componente", type=["jpg", "jpeg", "png"])
 
 image = None
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
     st.image(image, caption="Placa cargada para análisis", use_column_width=True)
 
-# Entrada de texto del usuario (Chat interactivo)
-user_query = st.chat_input("Escribe tu duda, describe el fallo o introduce el resultado de tu última medición...")
+# Entrada de texto del usuario
+user_query = st.chat_input("Escribe o dicta tu respuesta / resultado de la medición...")
 
 if user_query:
     # Añadir mensaje del usuario al historial
@@ -59,14 +98,12 @@ if user_query:
     with st.chat_message("user"):
         st.markdown(user_query)
 
-    # Preparar el contenido para la IA incluyendo el historial de la conversación para mantener el hilo paso a paso
+    # Preparar el contenido para la IA
     contents = [SYSTEM_INSTRUCTION]
     
-    # Si hay imagen nueva, la adjuntamos
     if image is not None:
         contents.append(image)
 
-    # Construir el contexto histórico de la conversación para que la ingeniera recuerde por qué paso vamos
     historial_conversacion = "\n".join([f"{m['role']}: {m['content']}" for m in st.session_state.messages])
     contents.append(f"Historial de la reparación:\n{historial_conversacion}\n\nResponde como la Ingeniera Electrónica guiando el siguiente paso:")
 
@@ -81,8 +118,25 @@ if user_query:
                 ai_response = response.text
                 st.markdown(ai_response)
                 
-                # Guardar la respuesta de la IA en el historial
+                # Guardar respuesta en el historial
                 st.session_state.messages.append({"role": "assistant", "content": ai_response})
+                
+                # Botón de voz para esta nueva respuesta
+                texto_voz = ai_response.replace('*', '').replace('#', '').replace('`', '').replace('\n', ' ')
+                voice_html = f"""
+                    <div style="margin-top: 5px;">
+                        <button onclick="
+                            var msg = new SpeechSynthesisUtterance('{texto_voz}');
+                            msg.lang.es = 'es-ES';
+                            msg.rate = 1.0;
+                            window.speechSynthesis.cancel();
+                            window.speechSynthesis.speak(msg);
+                        " style="background-color: #ff4b4b; color: white; border: none; padding: 6px 12px; border-radius: 5px; font-size: 14px; cursor: pointer;">
+                            🔊 Escuchar respuesta en voz alta
+                        </button>
+                    </div>
+                """
+                components.html(voice_html, height=45)
                 
             except Exception as e:
                 st.error(f"Ha ocurrido un error al conectar con la IA: {e}")
