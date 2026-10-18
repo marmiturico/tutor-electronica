@@ -5,7 +5,7 @@ from PIL import Image
 # Configuración de la página
 st.set_page_config(page_title="Ingeniera Electrónica SMD - Tutor Experto", page_icon="👩‍🔧")
 
-st.title("👩‍🔧 Ingeniera Electrónica SMD - Asistente de Reparación")
+st.title(" Electrónica SMD - Asistente de Reparación")
 st.write("Tu experta personal en microelectrónica. Hablaremos paso a paso y esperaré tus mediciones.")
 
 # Obtener clave API desde los Secrets de Streamlit
