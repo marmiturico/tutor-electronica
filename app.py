@@ -5,7 +5,7 @@ from PIL import Image
 # Configuración de la página
 st.set_page_config(page_title="Ingeniera Electrónica SMD - Tutor Experto", page_icon="👩‍🔧")
 
-st.title(" Electrónica SMD - Asistente de Reparación")
+st.title("👩‍🔧 Ingeniera Electrónica SMD - Asistente de Reparación")
 st.write("Tu experta personal en microelectrónica. Hablaremos paso a paso y esperaré tus mediciones.")
 
 # Obtener clave API desde los Secrets de Streamlit
@@ -20,6 +20,28 @@ client = genai.Client(api_key=api_key)
 
 # 1. MEJORA DE VOZ: Añadir componente nativo de audio/voz de Streamlit si …
 [20:15, 18/10/2026] Juan Carlos Hernandez Mar: import streamlit as st
+from google import genai
+from PIL import Image
+import streamlit.components.v1 as components
+
+# Configuración de la página
+st.set_page_config(page_title="Ingeniera Electrónica SMD - Asistente de Reparación", page_icon="👩‍🔧")
+
+st.title(" Electrónica SMD - Asistente de Reparación")
+st.write("Tu experta personal en microelectrónica con guiado paso a paso y voz.")
+
+# Obtener clave API desde los Secrets de Streamlit
+api_key = st.secrets.get("GEMINI_API_KEY")
+
+if not api_key:
+    st.error("No se ha encontrado la clave 'GEMINI_API_KEY' en los Secrets de Streamlit. Por favor confígurala en Advanced Settings.")
+    st.stop()
+
+# Inicializar cliente de Gemini
+client = genai.Client(api_key=api_key)
+
+# Inicializar el historial de chat en la…
+[20:19, 18/10/2026] Juan Carlos Hernandez Mar: import streamlit as st
 from google import genai
 from PIL import Image
 import streamlit.components.v1 as components
@@ -57,19 +79,18 @@ SYSTEM_INSTRUCTION = (
 )
 
 # Mostrar el historial de mensajes
-for i, message in enumerate(st.session_state.messages):
+for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
         
-        # Si el mensaje es de la IA, añadimos un botón de voz interactivo
+        # Si el mensaje es de la IA, añadimos el botón de voz
         if message["role"] == "assistant":
-            # Limpiar texto para la síntesis de voz
-            texto_voz = message["content"].replace('*', '').replace('#', '').replace('`', '').replace('\n', ' ')
-            # Componente HTML con botón para reproducir voz en el móvil
+            # Preparar texto seguro eliminando caracteres problemáticos
+            texto_seguro = message["content"].replace('"', '\\"').replace("'", "\\'").replace('\n', ' ')
             voice_html = f"""
                 <div style="margin-top: 5px;">
                     <button onclick="
-                        var msg = new SpeechSynthesisUtterance('{texto_voz}');
+                        var msg = new SpeechSynthesisUtterance(\"{texto_seguro}\");
                         msg.lang = 'es-ES';
                         msg.rate = 1.0;
                         window.speechSynthesis.cancel();
@@ -82,7 +103,7 @@ for i, message in enumerate(st.session_state.messages):
             components.html(voice_html, height=45)
 
 # Subida opcional de imagen
-uploaded_file = st.file_uploader("📸 Sube una foto de la placa o componente", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader("📸 Sube una placa o componente", type=["jpg", "jpeg", "png"])
 
 image = None
 if uploaded_file is not None:
@@ -90,7 +111,7 @@ if uploaded_file is not None:
     st.image(image, caption="Placa cargada para análisis", use_column_width=True)
 
 # Entrada de texto del usuario
-user_query = st.chat_input("Escribe o dicta tu respuesta / resultado de la medición...")
+user_query = st.chat_input("Escribe o dicta tu respuesta / resultado...")
 
 if user_query:
     # Añadir mensaje del usuario al historial
@@ -121,13 +142,13 @@ if user_query:
                 # Guardar respuesta en el historial
                 st.session_state.messages.append({"role": "assistant", "content": ai_response})
                 
-                # Botón de voz para esta nueva respuesta
-                texto_voz = ai_response.replace('*', '').replace('#', '').replace('`', '').replace('\n', ' ')
+                # Renderizar botón de voz para esta nueva respuesta
+                texto_seguro = ai_response.replace('"', '\\"').replace("'", "\\'").replace('\n', ' ')
                 voice_html = f"""
                     <div style="margin-top: 5px;">
                         <button onclick="
-                            var msg = new SpeechSynthesisUtterance('{texto_voz}');
-                            msg.lang.es = 'es-ES';
+                            var msg = new SpeechSynthesisUtterance(\"{texto_seguro}\");
+                            msg.lang = 'es-ES';
                             msg.rate = 1.0;
                             window.speechSynthesis.cancel();
                             window.speechSynthesis.speak(msg);
