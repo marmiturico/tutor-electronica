@@ -1,55 +1,12 @@
 import streamlit as st
 from google import genai
 from PIL import Image
-
-# Configuración de la página
-st.set_page_config(page_title="Ingeniera Electrónica SMD - Tutor Experto", page_icon="👩‍🔧")
-
-st.title(" Electrónica SMD - Asistente de Reparación")
-st.write("Tu experta personal en microelectrónica. Hablaremos paso a paso y esperaré tus mediciones.")
-
-# Obtener clave API desde los Secrets de Streamlit
-api_key = st.secrets.get("GEMINI_API_KEY")
-
-if not api_key:
-    st.error("No se ha encontrado la clave 'GEMINI_API_KEY' en los Secrets de Streamlit. Por favor confígurala en Advanced Settings.")
-    st.stop()
-
-# Inicializar cliente de Gemini
-client = genai.Client(api_key=api_key)
-
-# 1. MEJORA DE VOZ: Añadir componente nativo de audio/voz de Streamlit si …
-[20:15, 18/10/2026] Juan Carlos Hernandez Mar: import streamlit as st
-from google import genai
-from PIL import Image
 import streamlit.components.v1 as components
 
 # Configuración de la página
-st.set_page_config(page_title="Ingeniera Electrónica SMD - Asistente de Reparación", page_icon="👩‍🔧")
+st.set_page_config(page_title=" Electrónica SMD - Asistente de Reparación", page_icon="👩‍🔧")
 
 st.title(" Electrónica SMD - Asistente de Reparación")
-st.write("Tu experta personal en microelectrónica con guiado paso a paso y voz.")
-
-# Obtener clave API desde los Secrets de Streamlit
-api_key = st.secrets.get("GEMINI_API_KEY")
-
-if not api_key:
-    st.error("No se ha encontrado la clave 'GEMINI_API_KEY' en los Secrets de Streamlit. Por favor confígurala en Advanced Settings.")
-    st.stop()
-
-# Inicializar cliente de Gemini
-client = genai.Client(api_key=api_key)
-
-# Inicializar el historial de chat en la…
-[20:19, 18/10/2026] Juan Carlos Hernandez Mar: import streamlit as st
-from google import genai
-from PIL import Image
-import streamlit.components.v1 as components
-
-# Configuración de la página
-st.set_page_config(page_title="Ingeniera Electrónica SMD - Asistente de Reparación", page_icon="👩‍🔧")
-
-st.title("👩‍🔧 Ingeniera Electrónica SMD - Asistente de Reparación")
 st.write("Tu experta personal en microelectrónica con guiado paso a paso y voz.")
 
 # Obtener clave API desde los Secrets de Streamlit
